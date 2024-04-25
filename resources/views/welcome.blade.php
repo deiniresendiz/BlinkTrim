@@ -13,6 +13,7 @@
         <!-- Styles -->
         @vite('resources/css/app.css')
         @vite('resources/js/app.js')
+
     </head>
     <body class="antialiased">
     <header class="flex flex-wrap sm:justify-start sm:flex-nowrap w-full bg-white text-sm py-4">
@@ -56,18 +57,19 @@
 
                 <div class="mt-7 sm:mt-12 mx-auto max-w-xl relative">
                     <!-- Form -->
-                    <form>
+                    <form action="{{ route('create-guest') }}" method="POST">
+                        @csrf
                         <div class="relative z-10 flex space-x-3 p-3 bg-white border rounded-lg shadow-lg shadow-gray-100">
                             <div class="flex-[1_0_0%] ">
                                 <label for="hs-search-article-1" class="block text-sm text-gray-700 font-medium dark:text-white"><span class="sr-only">Search article</span></label>
-                                <input type="email" name="hs-search-article-1" id="hs-search-article-1" class="py-2.5 px-4 block w-full border-transparent rounded-lg focus:border-blue-500 focus:ring-blue-500" placeholder="Enter the URL you want to shorten">
+                                <input type="url" name="url" id="url" class="py-2.5 px-4 block w-full border-transparent rounded-lg focus:border-blue-500 focus:ring-blue-500" placeholder="Enter the URL you want to shorten">
                             </div>
                             <div class="flex-[0_0_auto] ">
-                                <a class="size-[46px] inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" href="#">
+                                <button type="submit" class="size-[46px] inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                                     </svg>
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -91,10 +93,107 @@
                     </div>
                     <!-- End SVG Element -->
                 </div>
+                <div class="mx-auto max-w-xl relative">
+                    @if (session('success'))
+                        <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-4 mt-4 " role="alert">
+                            <div class="ms-3 content-center items-center">
+                                <h3 class="text-gray-800 font-semibold">
+                                    The new URL has been created successfully!
+                                </h3>
+                                <div class="mt-3">
+                                    <input type="hidden" id="hs-clipboard-tooltip" value="{{ session('success') }}">
+
+                                    <button type="button" class="copy [--trigger:focus] hs-tooltip relative py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-mono rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" data-clipboard-target="#hs-clipboard-tooltip" data-clipboard-action="copy" data-clipboard-success-text="Copied">
+                                        {{ session('success') }}
+                                        <span class="border-s ps-3.5">
+                                        <svg class="js-clipboard-default size-4 group-hover:rotate-6 transition" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                          <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                                          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                        </svg>
+
+                                        <svg class="js-clipboard-success hidden size-4 text-blue-600 rotate-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                          <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                      </span>
+                                        {{--<span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity hidden invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-lg shadow-sm" role="tooltip">
+                                        Copied
+                                      </span>--}}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    @if (session('error'))
+                        <div class="mt-3 bg-red-100 border border-red-200 text-sm text-red-800 rounded-lg p-4 dark:bg-red-800/10 dark:border-red-900 dark:text-red-500" role="alert">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+                </div>
+
 
             </div>
+
         </div>
     </div>
     <!-- End Hero -->
+    <script>
+        // INITIALIZATION OF CLIPBOARD
+        // =======================================================
+        (function() {
+            window.addEventListener('load', () => {
+                const $clipboards = document.querySelectorAll('.copy');
+                $clipboards.forEach((el) => {
+                    const isToggleTooltip = HSStaticMethods.getClassProperty(el, '--is-toggle-tooltip') === 'false' ? false : true;
+                    const clipboard = new ClipboardJS(el, {
+                        text: (trigger) => {
+                            const clipboardText = trigger.dataset.clipboardText;
+
+                            if (clipboardText) return clipboardText;
+
+                            const clipboardTarget = trigger.dataset.clipboardTarget;
+                            const $element = document.querySelector(clipboardTarget);
+
+                            if (
+                                $element.tagName === 'SELECT'
+                                || $element.tagName === 'INPUT'
+                                || $element.tagName === 'TEXTAREA'
+                            ) return $element.value
+                            else return $element.textContent;
+                        }
+                    });
+                    clipboard.on('success', () => {
+                        const $default = el.querySelector('.js-clipboard-default');
+                        const $success = el.querySelector('.js-clipboard-success');
+                        const $successText = el.querySelector('.js-clipboard-success-text');
+                        const successText = el.dataset.clipboardSuccessText || '';
+                        const tooltip = el.closest('.hs-tooltip');
+                        const $tooltip = HSTooltip.getInstance(tooltip, true);
+                        let oldSuccessText;
+
+                        if ($successText) {
+                            oldSuccessText = $successText.textContent
+                            $successText.textContent = successText
+                        }
+                        if ($default && $success) {
+                            $default.style.display = 'none'
+                            $success.style.display = 'block'
+                        }
+                        if (tooltip && isToggleTooltip) HSTooltip.show(tooltip);
+                        if (tooltip && !isToggleTooltip) $tooltip.element.popperInstance.update();
+
+                        setTimeout(function () {
+                            if ($successText && oldSuccessText) $successText.textContent = oldSuccessText;
+                            if (tooltip && isToggleTooltip) HSTooltip.hide(tooltip);
+                            if (tooltip && !isToggleTooltip) $tooltip.element.popperInstance.update();
+                            if ($default && $success) {
+                                $success.style.display = '';
+                                $default.style.display = '';
+                            }
+                        }, 800);
+                    });
+                });
+            })
+        })()
+    </script>
     </body>
 </html>
